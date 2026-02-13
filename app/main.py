@@ -1,12 +1,11 @@
 from fastapi import FastAPI
-from app.config.config import settings
+
 from app.api.routes import router
+from app.config.config import settings
 
 # Criar aplicação FastAPI
 app = FastAPI(
-    title=settings.app_name,
-    version=settings.app_version,
-    debug=settings.debug
+    title=settings.app_name, version=settings.app_version, debug=settings.debug
 )
 
 # Incluir rotas

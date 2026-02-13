@@ -1,0 +1,85 @@
+name: "Copilot Review & Auto-Merge"
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  pull_request_review:
+    types: [submitted]
+
+permissions:
+  pull-requests: write
+  contents: write
+
+jobs:
+  copilot-review:
+    name: Copilot Code Review
+    runs-on: ubuntu-latest
+    if: |
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event_name == 'pull_request'
+    
+    steps:
+      - name: Ask Copilot to review
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.pulls.requestReviewers({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              reviewers: ['github-actions'],
+              team_reviewers: []
+            });
+            
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: '👀 Copilot reviewing this PR...'
+            });
+
+  auto-merge-on-success:
+    name: Auto-Merge on Success
+    runs-on: ubuntu-latest
+    if: |
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event_name == 'pull_request_review'
+    
+    steps:
+      - name: Check CI status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: checkRuns } = await github.rest.checks.listForRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.payload.pull_request.head.sha,
+            });
+
+            const allSuccess = checkRuns.check_runs.every(run => 
+              run.name !== 'Dependabot' && 
+              (run.conclusion === 'success' || run.status === 'completed')
+            );
+
+            if (!allSuccess) {
+              throw new Error('Not all checks passed');
+            }
+
+      - name: Auto-merge PR
+        uses: actions/github-script@v7
+        if: success()
+        with:
+          script: |
+            github.rest.pulls.merge({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              merge_method: 'squash'
+            });
+
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: '✅ PR auto-merged by Copilot!'
+            });
