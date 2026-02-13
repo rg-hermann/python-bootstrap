@@ -12,6 +12,6 @@ httpx==0.25.2
 # Code Quality
 flake8==6.1.0
 black==23.12.1
-isort==5.13.2
+isort==7.0.0
 mypy==1.7.1
 
