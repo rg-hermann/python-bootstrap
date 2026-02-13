@@ -1,4 +1,8 @@
+from datetime import UTC, datetime
+
 from fastapi import APIRouter
+
+from app.config.config import settings
 
 router = APIRouter(tags=["default"])
 
@@ -16,3 +20,15 @@ def read_root():
 def health():
     """Health check básico"""
     return {"status": "healthy", "service": "python-bootstrap"}
+
+
+@router.get("/api/info")
+def get_info():
+    """Retorna informações sobre a aplicação (útil para testar deploy)"""
+    return {
+        "app_name": settings.app_name,
+        "version": settings.app_version,
+        "timestamp": datetime.now(UTC).isoformat(),
+        "service": "python-bootstrap",
+        "status": "running",
+    }

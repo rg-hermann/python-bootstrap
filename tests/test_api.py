@@ -43,3 +43,15 @@ def test_readiness(client):
     response = client.get("/actuator/health/readiness")
     assert response.status_code == 200
     assert response.json()["status"] == "UP"
+
+
+def test_info(client):
+    """Teste endpoint de informações da app"""
+    response = client.get("/api/info")
+    assert response.status_code == 200
+    data = response.json()
+    assert "app_name" in data
+    assert "version" in data
+    assert "timestamp" in data
+    assert data["service"] == "python-bootstrap"
+    assert data["status"] == "running"
